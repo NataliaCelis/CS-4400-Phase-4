@@ -9,7 +9,7 @@ try:
     connection = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="PUT PASSWORD HERE",
+        password="add-password-here",
         database="flight_tracking"
     )
 except mysql.connector.Error as err:
@@ -359,6 +359,439 @@ def flight_takeoff():
                            success=success,
                            flight_columns=flight_columns,
                            flight_data=flight_data)
+
+#Passengers board
+@app.route('/passengers_board', methods=['GET', 'POST'])
+def passengers_board():
+    message = ""
+    success = False
+    updated_ids = []
+    boarded_person_rows = []
+    boarded_passenger_rows = []
+    zipped_boarded_rows = []
+    zipped_before_after = []
+
+    if request.method == "POST":
+        flight_id = request.form.get("flightID")
+
+        if not flight_id:
+            message = "Please enter a flight ID."
+        else:
+            try:
+                cursor = connection.cursor()
+
+                # Get flight info
+                cursor.execute("SELECT airplane_status, routeID, progress, cost FROM flight WHERE flightID = %s", (flight_id,))
+                flight_row = cursor.fetchone()
+
+                if not flight_row:
+                    message = f"Flight {flight_id} does not exist."
+                elif flight_row[0] != 'on_ground':
+                    message = f"Flight {flight_id} is currently '{flight_row[0]}'. Passengers can only board when it's on the ground."
+                else:
+                    route_id, progress, cost = flight_row[1], flight_row[2], flight_row[3]
+
+                    # Get next leg
+                    cursor.execute("""
+                        SELECT l.departure, l.arrival
+                        FROM route_path rp
+                        JOIN leg l ON rp.legID = l.legID
+                        WHERE rp.routeID = %s AND rp.sequence = %s
+                    """, (route_id, progress + 1))
+                    leg = cursor.fetchone()
+
+                    if not leg:
+                        message = "No remaining legs in the route. This flight cannot board more passengers."
+                    else:
+                        departure_airport, arrival_airport = leg
+                        cursor.execute("SELECT locationID FROM airport WHERE airportID = %s", (departure_airport,))
+                        departure_loc_row = cursor.fetchone()
+
+                        if not departure_loc_row:
+                            message = "Departure airport is missing or invalid."
+                        else:
+                            departure_loc = departure_loc_row[0]
+
+                            # Get seat capacity
+                            cursor.execute("""
+                                SELECT a.seat_capacity 
+                                FROM airplane a
+                                JOIN flight f ON a.airlineID = f.support_airline AND a.tail_num = f.support_tail
+                                WHERE f.flightID = %s
+                            """, (flight_id,))
+                            seat_row = cursor.fetchone()
+
+                            if not seat_row:
+                                message = "Airplane seat capacity missing."
+                            else:
+                                seat_capacity = seat_row[0]
+
+                                # Get eligible personIDs
+                                cursor.execute("""
+                                    SELECT pe.personID
+                                    FROM passenger p
+                                    JOIN person pe ON p.personID = pe.personID
+                                    JOIN (
+                                        SELECT pv.personID, MIN(pv.sequence) AS min_sequence 
+                                        FROM passenger_vacations pv 
+                                        GROUP BY pv.personID
+                                    ) pv2 ON p.personID = pv2.personID
+                                    JOIN passenger_vacations pv3 ON p.personID = pv3.personID AND pv3.sequence = pv2.min_sequence
+                                    WHERE pe.locationID = %s 
+                                        AND pv3.airportID = %s 
+                                        AND p.funds >= %s
+                                """, (departure_loc, arrival_airport, cost))
+                                updated_ids = [row[0] for row in cursor.fetchall()]
+
+                                if not updated_ids:
+                                    message = "No eligible passengers found (wrong location, destination, or funds)."
+                                elif len(updated_ids) > seat_capacity:
+                                    message = f"Only {seat_capacity} seats available, but {len(updated_ids)} passengers are eligible."
+                                else:
+                                    # Fetch BEFORE values
+                                    format_strings = ','.join(['%s'] * len(updated_ids))
+                                    cursor.execute(f"SELECT * FROM person WHERE personID IN ({format_strings})", tuple(updated_ids))
+                                    before_person_rows = cursor.fetchall()
+                                    cursor.execute(f"SELECT * FROM passenger WHERE personID IN ({format_strings})", tuple(updated_ids))
+                                    before_passenger_rows = cursor.fetchall()
+
+                                    # Call the procedure
+                                    result = run_procedure("passengers_board", (flight_id,))
+                                    if result:
+                                        message = "Error: " + result
+                                    else:
+                                        message = f"{len(updated_ids)} passenger(s) boarded flight {flight_id}."
+                                        success = True
+
+                                        # Fetch AFTER values
+                                        cursor.execute(f"SELECT * FROM person WHERE personID IN ({format_strings})", tuple(updated_ids))
+                                        after_person_rows = cursor.fetchall()
+                                        cursor.execute(f"SELECT * FROM passenger WHERE personID IN ({format_strings})", tuple(updated_ids))
+                                        after_passenger_rows = cursor.fetchall()
+
+                                        boarded_person_rows = after_person_rows
+                                        boarded_passenger_rows = after_passenger_rows
+                                        zipped_boarded_rows = list(zip(after_person_rows, after_passenger_rows))
+                                        zipped_before_after = list(zip(before_person_rows, after_person_rows, before_passenger_rows, after_passenger_rows))
+
+                cursor.close()
+
+            except Exception as e:
+                message = f"Exception: {e}"
+
+    # Full table views
+    person_columns, person_data = fetch_table_data("person")
+    passenger_columns, passenger_data = fetch_table_data("passenger")
+
+    return render_template("passengers_board.html",
+                           message=message,
+                           success=success,
+                           person_columns=person_columns,
+                           person_data=person_data,
+                           passenger_columns=passenger_columns,
+                           passenger_data=passenger_data,
+                           updated_ids=updated_ids,
+                           boarded_person_rows=boarded_person_rows,
+                           boarded_passenger_rows=boarded_passenger_rows,
+                           person_colnames=person_columns,
+                           passenger_colnames=passenger_columns,
+                           zipped_boarded_rows=zipped_boarded_rows,
+                           zipped_before_after=zipped_before_after
+                           )
+
+#Passengers disembark
+@app.route('/passengers_disembark', methods=['GET', 'POST'])
+def passengers_disembark():
+    message = ""
+    success = False
+    updated_ids = []
+    before_rows = []
+    after_rows = []
+
+    if request.method == "POST":
+        flight_id = request.form.get("flightID")
+
+        if not flight_id:
+            message = "Please enter a flight ID."
+        else:
+            try:
+                cursor = connection.cursor()
+
+                # Get eligible passengers BEFORE the update
+                cursor.execute("""
+                    SELECT pv.personID
+                    FROM passenger_vacations pv
+                    JOIN person p ON pv.personID = p.personID
+                    JOIN flight f ON f.flightID = %s
+                    JOIN route_path rp ON f.routeID = rp.routeID AND rp.sequence = f.progress
+                    JOIN leg l ON rp.legID = l.legID
+                    WHERE pv.airportID = l.arrival AND pv.sequence = 1
+                      AND p.locationID = (
+                          SELECT ap.locationID
+                          FROM airplane ap
+                          WHERE ap.airlineID = f.support_airline AND ap.tail_num = f.support_tail
+                      )
+                """, (flight_id,))
+                updated_ids = [row[0] for row in cursor.fetchall()]
+
+                if not updated_ids:
+                    message = "No eligible passengers to disembark."
+                else:
+                    # Capture BEFORE state
+                    format_strings = ','.join(['%s'] * len(updated_ids))
+                    cursor.execute(f"SELECT * FROM person WHERE personID IN ({format_strings})", tuple(updated_ids))
+                    before_rows = cursor.fetchall()
+
+                    # Run the procedure
+                    result = run_procedure("passengers_disembark", (flight_id,))
+                    if result:
+                        message = "Error: " + result
+                    else:
+                        success = True
+                        message = f"{len(updated_ids)} passenger(s) disembarked from flight {flight_id}."
+
+                        # Capture AFTER state
+                        cursor.execute(f"SELECT * FROM person WHERE personID IN ({format_strings})", tuple(updated_ids))
+                        after_rows = cursor.fetchall()
+
+                cursor.close()
+            except Exception as e:
+                message = f"Exception: {e}"
+
+    # Full person & passenger tables
+    person_columns, person_data = fetch_table_data("person")
+    passenger_columns, passenger_data = fetch_table_data("passenger")
+    zipped_rows = list(zip(before_rows, after_rows))
+
+    return render_template("passengers_disembark.html",
+                           message=message,
+                           success=success,
+                           person_columns=person_columns,
+                           person_data=person_data,
+                           passenger_columns=passenger_columns,
+                           passenger_data=passenger_data,
+                           updated_ids=updated_ids,
+                           zipped_rows=zipped_rows,
+                           person_colnames=person_columns)
+
+#Assign Pilot
+@app.route('/assign_pilot', methods=['GET', 'POST'])
+def assign_pilot():
+    message = ""
+    success = False
+    updated_pilot = None
+    updated_person = None
+
+    if request.method == "POST":
+        flight_id = request.form.get("ip_flightID")
+        person_id = request.form.get("ip_personID")
+
+        if not flight_id or not person_id:
+            message = "Please enter both Flight ID and Person ID."
+        else:
+            try:
+                cursor = connection.cursor()
+
+                # Grab BEFORE row (optional but for comparison)
+                cursor.execute("SELECT * FROM pilot WHERE personID = %s", (person_id,))
+                pilot_before = cursor.fetchone()
+
+                cursor.execute("SELECT * FROM person WHERE personID = %s", (person_id,))
+                person_before = cursor.fetchone()
+
+                # Call the stored procedure
+                result = run_procedure("assign_pilot", (flight_id, person_id))
+
+                if result:
+                    message = "Error: " + result
+                else:
+                    success = True
+                    message = f"Pilot {person_id} successfully assigned to flight {flight_id}."
+
+                    # Fetch updated rows
+                    cursor.execute("SELECT * FROM pilot WHERE personID = %s", (person_id,))
+                    updated_pilot = cursor.fetchone()
+
+                    cursor.execute("SELECT * FROM person WHERE personID = %s", (person_id,))
+                    updated_person = cursor.fetchone()
+
+                cursor.close()
+            except Exception as e:
+                message = f"Exception: {e}"
+
+    # Fetch full tables
+    pilot_columns, pilot_data = fetch_table_data("pilot")
+    person_columns, person_data = fetch_table_data("person")
+
+    return render_template("assign_pilot.html",
+                           message=message,
+                           success=success,
+                           updated_pilot=updated_pilot,
+                           updated_person=updated_person,
+                           pilot_columns=pilot_columns,
+                           pilot_data=pilot_data,
+                           person_columns=person_columns,
+                           person_data=person_data)
+
+#Recycle crew
+@app.route('/recycle_crew', methods=['GET', 'POST'])
+def recycle_crew():
+    message = ""
+    success = False
+    updated_ids = []
+    updated_pilots = []
+    updated_people = []
+
+    if request.method == "POST":
+        flight_id = request.form.get("ip_flightID")
+
+        if not flight_id:
+            message = "Please enter a Flight ID."
+        else:
+            try:
+                cursor = connection.cursor()
+
+                # Who are the pilots currently assigned?
+                cursor.execute("SELECT personID FROM pilot WHERE commanding_flight = %s", (flight_id,))
+                pilot_ids = [row[0] for row in cursor.fetchall()]
+
+                if not pilot_ids:
+                    message = f"No active pilots assigned to {flight_id}, or flight not eligible for recycling."
+                else:
+                    format_strings = ','.join(['%s'] * len(pilot_ids))
+
+                    # BEFORE state (optional)
+                    cursor.execute(f"SELECT * FROM person WHERE personID IN ({format_strings})", tuple(pilot_ids))
+                    before_people = cursor.fetchall()
+
+                    cursor.execute(f"SELECT * FROM pilot WHERE personID IN ({format_strings})", tuple(pilot_ids))
+                    before_pilots = cursor.fetchall()
+
+                    # Run procedure
+                    result = run_procedure("recycle_crew", (flight_id,))
+                    if result:
+                        message = "Error: " + result
+                    else:
+                        success = True
+                        message = f"Successfully recycled crew for flight {flight_id}."
+                        updated_ids = pilot_ids
+
+                        # Fetch updated data
+                        cursor.execute(f"SELECT * FROM person WHERE personID IN ({format_strings})", tuple(pilot_ids))
+                        updated_people = cursor.fetchall()
+
+                        cursor.execute(f"SELECT * FROM pilot WHERE personID IN ({format_strings})", tuple(pilot_ids))
+                        updated_pilots = cursor.fetchall()
+
+                cursor.close()
+            except Exception as e:
+                message = f"Exception: {e}"
+
+    pilot_columns, pilot_data = fetch_table_data("pilot")
+    person_columns, person_data = fetch_table_data("person")
+    zipped_rows = list(zip(updated_people, updated_pilots))
+
+    return render_template("recycle_crew.html",
+                           message=message,
+                           success=success,
+                           zipped_rows=zipped_rows,
+                           pilot_columns=pilot_columns,
+                           pilot_data=pilot_data,
+                           person_columns=person_columns,
+                           person_data=person_data,
+                           person_colnames=person_columns,
+                           pilot_colnames=pilot_columns)
+
+#Retire flight
+@app.route('/retire_flight', methods=['GET', 'POST'])
+def retire_flight():
+    message = ""
+    success = False
+    removed_flight_id = None
+
+    if request.method == "POST":
+        flight_id = request.form.get("flightID", "").strip()
+
+        if not flight_id:
+            message = "Please enter a flight ID."
+        else:
+            try:
+                cursor = connection.cursor()
+
+                # Check if the flight exists
+                cursor.execute("SELECT COUNT(*) FROM flight WHERE flightID = %s", (flight_id,))
+                exists = cursor.fetchone()[0]
+
+                if exists == 0:
+                    message = f"Flight '{flight_id}' does not exist."
+                else:
+                    # Run the procedure
+                    result = run_procedure("retire_flight", (flight_id,))
+
+                    # Check if the flight was actually removed
+                    cursor.execute("SELECT COUNT(*) FROM flight WHERE flightID = %s", (flight_id,))
+                    still_exists = cursor.fetchone()[0]
+
+                    if still_exists == 0:
+                        message = f"Flight '{flight_id}' successfully retired."
+                        success = True
+                        removed_flight_id = flight_id
+                    else:
+                        message = f"Flight '{flight_id}' was not retired. It may not meet all the constraints."
+
+                cursor.close()
+
+            except Exception as e:
+                message = f"Error: {e}"
+
+    # Display updated flight table
+    flight_columns, flight_data = fetch_table_data("flight")
+
+    return render_template("retire_flight.html",
+                           message=message,
+                           success=success,
+                           flight_columns=flight_columns,
+                           flight_data=flight_data,
+                           removed_flight_id=removed_flight_id)
+
+
+#simulation cycle
+@app.route('/simulation_cycle', methods=['GET', 'POST'])
+def simulation_cycle():
+    message = ""
+    success = False
+
+    if request.method == "POST":
+        try:
+            result = run_procedure("simulation_cycle", ())
+            if result:
+                message = "Error: " + result
+            else:
+                success = True
+                message = "Simulation cycle successfully executed."
+        except Exception as e:
+            message = f"Exception occurred: {e}"
+
+    # Refresh relevant tables
+    flight_columns, flight_data = fetch_table_data("flight")
+    person_columns, person_data = fetch_table_data("person")
+    passenger_columns, passenger_data = fetch_table_data("passenger")
+    pilot_columns, pilot_data = fetch_table_data("pilot")
+    airplane_columns, airplane_data = fetch_table_data("airplane")
+
+    return render_template("simulation_cycle.html",
+                           message=message,
+                           success=success,
+                           flight_columns=flight_columns,
+                           flight_data=flight_data,
+                           person_columns=person_columns,
+                           person_data=person_data,
+                           passenger_columns=passenger_columns,
+                           passenger_data=passenger_data,
+                           pilot_columns=pilot_columns,
+                           pilot_data=pilot_data,
+                           airplane_columns=airplane_columns,
+                           airplane_data=airplane_data)
 
 # Start app
 if __name__ == '__main__':
