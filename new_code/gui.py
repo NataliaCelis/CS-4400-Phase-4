@@ -9,7 +9,7 @@ try:
     connection = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Ilovenerdz!8!",
+        password="PUT PASSWORD HERE",
         database="flight_tracking"
     )
 except mysql.connector.Error as err:
