@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simulation Cycle</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; padding: 40px; }
+    h2 { color: #2c3e50; }
+    .msg {
+      font-weight: bold;
+      margin: 20px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .success { background-color: #d4edda; color: #155724; }
+    .error { background-color: #f8d7da; color: #721c24; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 25px 0;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th { background-color: #3498db; color: white; }
+    button {
+      background-color: #2980b9;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #21618c;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #3498db;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<h2>Procedure: Simulation Cycle</h2>
+
+{% if message %}
+<div class="msg {{ 'success' if success else 'error' }}">{{ message }}</div>
+{% endif %}
+
+<form method="POST">
+  <button type="submit">Next Step</button>
+</form>
+
+<a href="/" class="back-link">← Back to Home</a>
+
+<h3>Flight Table</h3>
+<table>
+  <tr>{% for col in flight_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in flight_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+<h3>Person Table</h3>
+<table>
+  <tr>{% for col in person_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in person_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+<h3>Passenger Table</h3>
+<table>
+  <tr>{% for col in passenger_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in passenger_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+<h3>Pilot Table</h3>
+<table>
+  <tr>{% for col in pilot_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in pilot_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+<h3>Airplane Table</h3>
+<table>
+  <tr>{% for col in airplane_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in airplane_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+</body>
+</html>

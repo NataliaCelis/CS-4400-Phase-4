@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Assign Pilot</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 40px; }
+    h2 { color: #2c3e50; }
+    input {
+      padding: 8px;
+      margin: 6px;
+      width: 250px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #2980b9;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #21618c;
+    }
+    .msg { font-weight: bold; margin-top: 15px; }
+    .success { color: green; }
+    .error { color: red; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 30px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th { background-color: #2980b9; color: white; }
+    .back-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #3498db;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<h2>Procedure: Assign Pilot</h2>
+
+{% if message %}
+<div class="msg {{ 'success' if success else 'error' }}">{{ message }}</div>
+{% endif %}
+
+<form method="POST">
+  <input type="text" name="ip_flightID" placeholder="Flight ID (e.g. dl_42)" required><br>
+  <input type="text" name="ip_personID" placeholder="Pilot Person ID (e.g. p7)" required><br>
+  <button type="submit">Assign</button>
+</form>
+
+<a href="/" class="back-link">← Back to Home</a>
+
+{% if updated_pilot %}
+<h3>Updated Pilot Info</h3>
+<table>
+  <tr>{% for col in pilot_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  <tr>{% for item in updated_pilot %}<td>{{ item }}</td>{% endfor %}</tr>
+</table>
+{% endif %}
+
+{% if updated_person %}
+<h3>Updated Person Info</h3>
+<table>
+  <tr>{% for col in person_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  <tr>{% for item in updated_person %}<td>{{ item }}</td>{% endfor %}</tr>
+</table>
+{% endif %}
+
+<h3>Full Pilot Table</h3>
+<table>
+  <tr>{% for col in pilot_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in pilot_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+<h3>Full Person Table</h3>
+<table>
+  <tr>{% for col in person_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in person_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+</body>
+</html>

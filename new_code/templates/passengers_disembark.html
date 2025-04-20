@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Passengers Disembark</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+    }
+    h2 {
+      color: #2c3e50;
+    }
+    input {
+      padding: 8px;
+      margin: 5px;
+      width: 250px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .btn {
+      background-color: #2980b9;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      margin-top: 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #21618c;
+    }
+    .msg {
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 30px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: #3498db;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<h2>Passengers Disembark</h2>
+
+{% if message %}
+<div class="msg {{ 'success' if success else 'error' }}">{{ message }}</div>
+{% endif %}
+
+<form method="POST">
+  <input type="text" name="flightID" placeholder="Flight ID (e.g., dl_10)" required>
+  <br>
+  <button type="submit" class="btn">Disembark</button>
+</form>
+
+<a href="/" class="back-link">← Back to Home</a>
+
+{% if zipped_rows %}
+<h3>Disembarked Passengers (Before → After)</h3>
+<table>
+  <tr>
+    <th colspan="{{ person_colnames|length }}">Before</th>
+    <th colspan="{{ person_colnames|length }}">After</th>
+  </tr>
+  <tr>
+    {% for col in person_colnames %}<th>{{ col }}</th>{% endfor %}
+    {% for col in person_colnames %}<th>{{ col }}</th>{% endfor %}
+  </tr>
+  {% for before, after in zipped_rows %}
+  <tr>
+    {% for item in before %}<td>{{ item }}</td>{% endfor %}
+    {% for item in after %}<td>{{ item }}</td>{% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<h3>Person Table</h3>
+<table>
+  <tr>{% for col in person_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in person_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+<h3>Passenger Table</h3>
+<table>
+  <tr>{% for col in passenger_columns %}<th>{{ col }}</th>{% endfor %}</tr>
+  {% for row in passenger_data %}
+  <tr>{% for item in row %}<td>{{ item }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+
+</body>
+</html>
