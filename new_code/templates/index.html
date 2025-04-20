@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flight Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f7f9fc;
+            text-align: center;
+            padding: 60px;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 3em;
+        }
+        p {
+            color: #34495e;
+            font-size: 1.2em;
+        }
+        .btn-container {
+            margin-top: 30px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px 25px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+<h1>Welcome to Flight Tracking</h1>
+<p>The dashboard for managing flights and airplanes.</p>
+
+<div class="btn-container">
+    <h2>Stored Procedures</h2>
+    <a class="btn" href="/add_airplane">Add Airplane</a>
+    <a class="btn" href="/add_airport">Add Airport</a>
+    <a class="btn" href="/add_person">Add Person</a>
+    <a class="btn" href="/pilot_license">Grant/Revoke Pilot License</a>
+    <a class="btn" href="/offer_flight">Offer Flight</a>
+    <a class="btn" href="/flight_takeoff">Flight Takeoff</a>
+    <a class="btn" href="/flight_landing">Flight Landing</a>
+    <a class="btn" href="/passengers_board">Passengers Board</a>
+    <a class="btn" href="/passengers_disembark">Passengers Disembark</a>
+    <a class="btn" href="/assign_pilot">Assign Pilot</a>
+    <a class="btn" href="/recycle_crew">Recycle Crew</a>
+    <a class="btn" href="/retire_flight">Retire Flight</a>
+    <a class="btn" href="/simulation_cycle">Simulation Cycle</a>
+
+    <h2 style="margin-top: 40px;">Views</h2>
+    <a class="btn" href="/flights_in_the_air">Flights in the Air</a>
+    <a class="btn" href="/flights_on_the_ground">Flights on the Ground</a>
+    <a class="btn" href="/people_in_the_air">People in the Air</a>
+    <a class="btn" href="/people_on_the_ground">People on the Ground</a>
+    <a class="btn" href="/route_summary">Route Summary</a>
+    <a class="btn" href="/alternative_airports">Alternative Airports</a>
+</div>
+
+
+</body>
+</html>
