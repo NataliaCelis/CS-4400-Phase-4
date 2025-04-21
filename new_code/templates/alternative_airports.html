@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Alternative Airports</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f8; padding: 40px; }
+    h2 { color: #2c3e50; }
+    .msg {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+    .success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 30px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 12px;
+        text-align: center;
+    }
+    th {
+        background-color: #3498db;
+        color: white;
+    }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    .back-link {
+        display: inline-block;
+        margin-top: 15px;
+        color: #3498db;
+        text-decoration: none;
+    }
+    .back-link:hover {
+        text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Alternative Airports</h2>
+
+<a href="/" class="back-link">← Back to Home</a>
+
+{% if message %}
+  <div class="msg {% if success %}success{% else %}error{% endif %}">{{ message }}</div>
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      {% for col in columns %}
+        <th>{{ col.replace('_', ' ').title() }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% if data %}
+      {% for row in data %}
+        <tr>
+          {% for col in columns %}
+            <td>{{ row[columns.index(col)] }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="{{ columns|length }}" style="text-align: center; color: #7f8c8d; font-style: italic;">
+          No alternative airports data available.
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+</body>
+</html>
