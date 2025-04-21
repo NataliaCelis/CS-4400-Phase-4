@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>People In The Air</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; padding: 40px; }
+    h2 { color: #2c3e50; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 25px 0;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th { background-color: #3498db; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    .back-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #3498db;
+      text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<h2>People Currently In The Air</h2>
+<a href="/" class="back-link">← Back to Home</a>
+
+{% if message %}
+  <p style="color: red;">{{ message }}</p>
+{% endif %}
+
+<table>
+  <tr>
+    {% for col in columns %}
+      <th>{{ col.replace('_', ' ').title() }}</th>
+    {% endfor %}
+  </tr>
+
+  {% if data %}
+    {% for row in data %}
+      <tr>
+        {% for col in columns %}
+          <td>{{ row[columns.index(col)] }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  {% else %}
+    <tr>
+      <td colspan="{{ columns|length }}" style="text-align: center; color: #7f8c8d; font-style: italic;">
+        No people currently in the air.
+      </td>
+    </tr>
+  {% endif %}
+</table>
+
+</body>
+</html>
