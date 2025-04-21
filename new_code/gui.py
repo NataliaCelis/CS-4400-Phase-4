@@ -898,6 +898,82 @@ def route_summary():
                            route_columns=route_columns,
                            route_data=route_data)
 
+#PeopleAir
+@app.route('/people_in_the_air', methods=['GET'])
+def people_in_the_air():
+    message = ""
+    success = False
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM people_in_the_air;")
+        data = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+        success = True
+    except Exception as e:
+        message = f"Error fetching data: {e}"
+        data = []
+        columns = []
+
+    cursor.close()
+
+    return render_template("people_in_the_air.html",
+                           message=message,
+                           success=success,
+                           columns=columns,
+                           data=data)
+
+
+#AlternativeAirports
+@app.route('/alternative_airports', methods=['GET'])
+def alternative_airports():
+    message = ""
+    success = False
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM alternative_airports;") 
+        data = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+        success = True
+    except Exception as e:
+        message = f"Error fetching data: {e}"
+        data = []
+        columns = []
+
+    cursor.close()
+
+    return render_template("alternative_airports.html",
+                           message=message,
+                           success=success,
+                           columns=columns,
+                           data=data)
+
+#PeopleGround
+@app.route('/people_on_the_ground', methods=['GET'])
+def people_on_the_ground():
+    message = ""
+    success = False
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM people_on_the_ground;")
+        data = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+        success = True
+    except Exception as e:
+        message = f"Error fetching data: {e}"
+        data = []
+        columns = []
+
+    cursor.close()
+
+    return render_template("people_on_the_ground.html",
+                           message=message,
+                           success=success,
+                           columns=columns,
+                           data=data)
+
 # Start app
 if __name__ == '__main__':
     app.run(debug=True)
