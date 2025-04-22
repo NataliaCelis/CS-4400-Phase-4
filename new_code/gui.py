@@ -294,14 +294,47 @@ def flight_landing():
         if not flight_id:
             message = "Please select a flight."
         else:
-            result = run_procedure("flight_landing", (flight_id,))
-            if result:
-                message = "Error: " + result
-            else:
-                message = f"Flight {flight_id} successfully landed!"
-                success = True
+            # old code with simpler success/error implementation
+            # result = run_procedure("flight_landing", (flight_id,))
+            # if result:
+                # message = "Error: " + result
+            # else:
+                # message = f"Flight {flight_id} successfully landed!"
+                # success = True
 
-    # Re-fetch dropdown AFTER form handling to reflect status updates
+            try: # using a cursor so that we can compare before and after values to give useful error messages
+                cursor = connection.cursor()
+
+                # get flight state before landing
+                cursor.execute("SELECT airplane_status, progress FROM flight WHERE flightID = %s", (flight_id,))
+                before = cursor.fetchone()
+
+                if not before: # if no rows returned
+                    message = "Flight not found."
+                else:
+                    status_before, progress_before = before
+
+                    # call the flight_landing procedure from the sql file
+                    result = run_procedure("flight_landing", (flight_id,))
+
+                    # get flight state after landing
+                    cursor.execute("SELECT airplane_status, progress FROM flight WHERE flightID = %s", (flight_id,))
+                    after = cursor.fetchone()
+                    status_after, progress_after = after
+
+                    if result:
+                        message = "Error: " + result
+                    elif status_before == 'in_flight' and status_after == 'on_ground' and progress_after == progress_before:
+                        message = f"Flight {flight_id} successfully landed!"
+                        success = True
+                    else:
+                        message = f"Flight {flight_id} could not land — it may already be on the ground or not in flight."
+            except Exception as e:
+                message = "Error: " + str(e)
+            finally:
+                cursor.close()
+
+    # re-fetch dropdown AFTER form handling to reflect status updates
     try:
         cursor = connection.cursor()
         cursor.execute("SELECT flightID FROM flight WHERE airplane_status = 'in_flight'")
@@ -333,7 +366,7 @@ def flight_takeoff():
         if not flight_id:
             message = "Please select a flight."
         else:
-            # old code, simpler success/error implementation
+            # old code with simpler success/error implementation
             #result = run_procedure("flight_takeoff", (flight_id,))
             #if result:
                 #message = "Error: " + result
@@ -350,7 +383,7 @@ def flight_takeoff():
                 if not before:
                     message = "Flight not found."
                 else:
-                    status_before, next_time_before = before # get the time before running
+                    status_before, next_time_before = before # get the time before running so we can compare after
 
                     # Call takeoff procedure (which may delay the time, properly take off, or not take off)
                     result = run_procedure("flight_takeoff", (flight_id,))
@@ -358,7 +391,7 @@ def flight_takeoff():
                     # Get flight state after takeoff to see what happened
                     cursor.execute("SELECT airplane_status, next_time FROM flight WHERE flightID = %s", (flight_id,))
                     after = cursor.fetchone()
-                    status_after, next_time_after = after # get the time after running
+                    status_after, next_time_after = after # get the time after running so we can compare
 
                     if result:
                         message = "Error: " + result
@@ -368,7 +401,7 @@ def flight_takeoff():
                     elif status_after == status_before and next_time_after > next_time_before:
                         message = f"Flight {flight_id} was delayed by 30 minutes due to insufficient pilots."
                     else:
-                        message = f"Flight {flight_id} could not take off — check flight requirements or current state."
+                        message = f"Flight {flight_id} could not take off — check if the flight has any remaining legs, or if it is already in flight."
 
             except Exception as e:
                 message = "Error: " + str(e)
@@ -831,23 +864,18 @@ def simulation_cycle():
 # 14 - flights_in_the_air
 @app.route('/flights_in_the_air', methods=['GET'])
 def flights_in_the_air():
+    # define message and success to be set below
     message = ""
     success = False
 
-    try:
-        # Query the view instead of calling a procedure
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM flights_in_the_air")  # Query the view
-        flight_data = cursor.fetchall()
-        flight_columns = [col[0] for col in cursor.description]  # Get column names
+    # fetch the data for flights in the air
+    flight_columns, flight_data = fetch_table_data("flights_in_the_air")
+        
+    if flight_data: # if we get valid data
         success = True
-    except Exception as e:
-        message = f"Error fetching data: {e}"
-        flight_data = []
-        flight_columns = []
-
-    # Close the cursor
-    cursor.close()
+        message = "Successfully fetched flights in the air."
+    else:
+        message = "No flights are in the air at the moment."
 
     return render_template("flights_in_the_air.html",
                            message=message,
@@ -858,12 +886,12 @@ def flights_in_the_air():
 # 15 - flights_on_the_ground
 @app.route('/flights_on_the_ground', methods=['GET'])
 def flights_on_the_ground():
-    # Fetch the data for flights on the ground
-    flight_columns, flight_data = fetch_table_data("flights_on_the_ground")
-
     # define message and success to be set below
     message = ""
     success = False
+
+    # fetch the data for flights on the ground
+    flight_columns, flight_data = fetch_table_data("flights_on_the_ground")
 
     if flight_data: # if we get valid data
         success = True
@@ -881,7 +909,7 @@ def flights_on_the_ground():
 # 16 - route_summary
 @app.route('/route_summary', methods=['GET'])
 def route_summary():
-    # Fetch the route summary data
+    # fetch the route summary data
     route_columns, route_data = fetch_table_data("route_summary")
 
     message = ""
