@@ -3,61 +3,132 @@
 <head>
   <title>People In The Air</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; padding: 40px; }
-    h2 { color: #2c3e50; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+      margin: 0;
+    }
+
+    h2 {
+      color: #2c3e50;
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .msg {
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
     table {
       border-collapse: collapse;
       width: 100%;
-      margin: 25px 0;
+      margin-top: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
+
     th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
+      border: 1px solid #ddd;
+      padding: 12px;
       text-align: center;
     }
-    th { background-color: #3498db; color: white; }
-    tr:nth-child(even) { background-color: #f2f2f2; }
+
+    th {
+      background-color: #3498db;
+      color: white;
+      text-transform: capitalize;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .btn {
+      background-color: #2980b9;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      margin-top: 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #21618c;
+    }
+
     .back-link {
       display: inline-block;
       margin-top: 15px;
       color: #3498db;
       text-decoration: none;
+      font-weight: bold;
     }
-    .back-link:hover { text-decoration: underline; }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #7f8c8d;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
 
-<h2>People Currently In The Air</h2>
-<a href="/" class="back-link">← Back to Home</a>
+  <h2>People Currently In The Air</h2>
 
-{% if message %}
-  <p style="color: red;">{{ message }}</p>
-{% endif %}
+  {% if message %}
+    <div class="msg {% if success %}success{% else %}error{% endif %}">{{ message }}</div>
+  {% endif %}
 
-<table>
-  <tr>
-    {% for col in columns %}
-      <th>{{ col.replace('_', ' ').title() }}</th>
-    {% endfor %}
-  </tr>
+  <form method="GET">
+    <button type="submit" class="btn">Refresh Button</button>
+  </form>
 
-  {% if data %}
-    {% for row in data %}
+  <table>
+    <thead>
       <tr>
         {% for col in columns %}
-          <td>{{ row[columns.index(col)] }}</td>
+          <th>{{ col.replace('_', ' ').title() }}</th>
         {% endfor %}
       </tr>
-    {% endfor %}
-  {% else %}
-    <tr>
-      <td colspan="{{ columns|length }}" style="text-align: center; color: #7f8c8d; font-style: italic;">
-        No people currently in the air.
-      </td>
-    </tr>
-  {% endif %}
-</table>
+    </thead>
+    <tbody>
+      {% if data %}
+        {% for row in data %}
+          <tr>
+            {% for col in columns %}
+              <td>{{ row[columns.index(col)] }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="{{ columns|length }}" class="no-data">
+            No people currently in the air.
+          </td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <a href="/" class="back-link">← Back to Home</a>
 
 </body>
 </html>
