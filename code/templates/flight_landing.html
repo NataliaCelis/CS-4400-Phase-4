@@ -42,6 +42,9 @@
         border-radius: 4px;
         border: 1px solid #ccc;
     }
+    select option[disabled] {
+        color: #999;
+    }
     button {
         background-color: #2980b9;
         color: white;
@@ -87,10 +90,11 @@
 <h1>✈️ Flight Landing</h1>
 
 <form method="POST">
-  <label for="flightID">Select Flight:</label>
+  <label for="flightID"><strong>Select Flight:</strong></label>
   <select name="flightID" required>
+    <option value="" disabled selected>Select a Flight</option> <!-- This is the greyed-out placeholder -->
     {% for flight in flight_ids %}
-    <option value="{{ flight }}">{{ flight }}</option>
+      <option value="{{ flight }}">{{ flight }}</option>
     {% endfor %}
   </select>
   <button type="submit">Land Flight</button>

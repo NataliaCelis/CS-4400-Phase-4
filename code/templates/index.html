@@ -35,12 +35,37 @@
         .btn:hover {
             background-color: #2980b9;
         }
+
+        .alert {
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+            text-align: left;
+            width: auto;
+            margin-left: 10px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .reset-btn-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-top: 40px;
+        }
     </style>
 </head>
 <body>
 <h1>Welcome to Flight Tracking</h1>
 <p>The dashboard for managing flights and airplanes.</p>
-
 <div class="btn-container">
     <h2>Stored Procedures</h2>
     <a class="btn" href="/add_airplane">Add Airplane</a>
@@ -64,8 +89,20 @@
     <a class="btn" href="/people_on_the_ground">People on the Ground</a>
     <a class="btn" href="/route_summary">Route Summary</a>
     <a class="btn" href="/alternative_airports">Alternative Airports</a>
-</div>
 
+    <div class="reset-btn-container">
+        <form action="/reset_db" method="POST">
+            <button type="submit" class="btn" style="background-color: #e74c3c;">Reset Database</button>
+        </form>
+        
+        <!-- Success/Error Alert -->
+        {% if message %}
+            <div class="alert {{ 'alert-success' if 'reset' in message else 'alert-danger' }}">
+                {{ message }}
+            </div>
+        {% endif %}
+    </div>
+</div>
 
 </body>
 </html>

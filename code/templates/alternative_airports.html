@@ -49,6 +49,7 @@
     th {
       background-color: #3498db;
       color: white;
+      text-transform: capitalize;
     }
 
     tr:nth-child(even) {
@@ -97,7 +98,7 @@
   {% endif %}
 
   <form method="GET">
-    <button type="submit" class="btn">Refresh Button</button>
+    <button type="submit" class="btn">Refresh Data</button>
   </form>
 
   <table>
@@ -112,8 +113,8 @@
       </tr>
     </thead>
     <tbody>
-      {% if data %}
-        {% for row in data %}
+      {% if airports_data %}
+        {% for row in airports_data %}
           <tr>
             <td>{{ row.city }}</td>
             <td>{{ row.state }}</td>

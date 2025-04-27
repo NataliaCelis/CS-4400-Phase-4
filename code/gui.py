@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
 
 app = Flask(__name__)
@@ -43,10 +43,99 @@ def fetch_table_data(table_name):
         cursor.close()
     return columns, data
 
+def reset_database(): # going to comment this as much as i can to make it easy to understand
+    try:
+        cursor = connection.cursor() # to execute sql commands on existing mysql connection
+
+        # step 1: run flight_tracking.sql (schema and inserts)
+        with open('flight_tracking.sql', 'r') as f:
+            schema_sql = f.read() # reading the entire file into one big string
+
+        for statement in schema_sql.split(';'): # just executing the normal sql statements. after this all our tables are created and populated
+            if statement.strip():
+                cursor.execute(statement)
+                while cursor.nextset():
+                    pass
+
+        # step 2: run code.sql (procedures, views, functions) -> we need to be careful about the delimiters
+        with open('code.sql', 'r') as f:
+            code_sql = f.read() # same as before, reading entire file into one big string
+
+        # read file line by line, building up the blocks that represent a full procedure/function/view
+        code_blocks = []
+        block = []
+        current_delimiter = ';' # separating the blocks by their delimiters which can change as we go inside and out of procedures, functions, views
+
+        for line in code_sql.splitlines():
+            line_strip = line.strip()
+
+            if line_strip.lower().startswith('delimiter'):
+                # if we see a delimiter, save the block we collected so far
+                if block:
+                    code_blocks.append((current_delimiter, '\n'.join(block)))
+                    block = []
+                # and update delimiter (example: DELIMITER // or DELIMITER ;)
+                parts = line_strip.split()
+                if len(parts) > 1:
+                    current_delimiter = parts[1]
+            else:
+                # otherwise add the line to the current block. once the line ends with the delimiter, we have reached the end of the block
+                block.append(line)
+                if line_strip.endswith(current_delimiter):
+                    code_blocks.append((current_delimiter, '\n'.join(block)))
+                    block = []
+
+        # we just need this line below because after we finish reading all lines there may be a leftover block not saved yet (i.e. if we hit an END //)
+        if block:
+            code_blocks.append((current_delimiter, '\n'.join(block)))
+
+        # we should end up with a list in the format of [(delimiter1, block1), (delimiter2, block2)], ...]
+
+        # this loop will execute each code block
+        for delim, block in code_blocks:
+            block = block.strip()
+            if not block:
+                continue
+
+            # remove the ending delimiter if it exists
+            if block.endswith(delim):
+                block = block[: -len(delim)].rstrip()
+
+            # add a semicolon at the end for mysql to accept it
+            if not block.endswith(';'):
+                block += ';'
+
+            try:
+                cursor.execute(block)
+                while cursor.nextset():
+                    pass
+            except mysql.connector.Error as e:
+                print(f"Error executing block: {e}")
+                print("Block content:")
+                print(block)
+                raise e
+
+        connection.commit()
+        print("Database reset successful.")
+
+    except mysql.connector.Error as e:
+        print("Error resetting database:", e)
+
+    finally:
+        cursor.close()
+
+@app.route('/reset_db', methods=['POST'])
+def reset_db():
+    try:
+        reset_database()
+        return redirect(url_for('home', message="Database has been reset!"))
+    except Exception as e:
+        return render_template('index.html', message=f"Error resetting database: {e}")
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    message = request.args.get('message')
+    return render_template('index.html', message=message)
 
 # Add Airplane
 @app.route('/add_airplane', methods=['GET', 'POST'])
@@ -932,24 +1021,20 @@ def people_in_the_air():
     message = ""
     success = False
 
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM people_in_the_air;")
-        data = cursor.fetchall()
-        columns = [col[0] for col in cursor.description]
+    # fetch the data for people in the air
+    people_columns, people_data = fetch_table_data("people_in_the_air")
+    
+    if people_data:  # if we get valid data
         success = True
-    except Exception as e:
-        message = f"Error fetching data: {e}"
-        data = []
-        columns = []
-
-    cursor.close()
+        message = "Successfully fetched people in the air."
+    else:
+        message = "No people are in the air at the moment."
 
     return render_template("people_in_the_air.html",
                            message=message,
                            success=success,
-                           columns=columns,
-                           data=data)
+                           columns=people_columns,
+                           data=people_data)
 
 
 #AlternativeAirports
@@ -958,24 +1043,20 @@ def alternative_airports():
     message = ""
     success = False
 
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM alternative_airports;") 
-        data = cursor.fetchall()
-        columns = [col[0] for col in cursor.description]
+    # fetch the data for alternative airports
+    airports_columns, airports_data = fetch_table_data("alternative_airports")
+    
+    if airports_data:  # if we get valid data
         success = True
-    except Exception as e:
-        message = f"Error fetching data: {e}"
-        data = []
-        columns = []
-
-    cursor.close()
+        message = "Successfully fetched alternative airports."
+    else:
+        message = "No alternative airports data available."
 
     return render_template("alternative_airports.html",
                            message=message,
                            success=success,
-                           columns=columns,
-                           data=data)
+                           columns=airports_columns,
+                           data=airports_data)
 
 #PeopleGround
 @app.route('/people_on_the_ground', methods=['GET'])
@@ -983,24 +1064,20 @@ def people_on_the_ground():
     message = ""
     success = False
 
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM people_on_the_ground;")
-        data = cursor.fetchall()
-        columns = [col[0] for col in cursor.description]
+    # fetch the data for people on the ground
+    people_columns, people_data = fetch_table_data("people_on_the_ground")
+    
+    if people_data:  # if we get valid data
         success = True
-    except Exception as e:
-        message = f"Error fetching data: {e}"
-        data = []
-        columns = []
-
-    cursor.close()
+        message = "Successfully fetched people on the ground."
+    else:
+        message = "No people are on the ground at the moment."
 
     return render_template("people_on_the_ground.html",
                            message=message,
                            success=success,
-                           columns=columns,
-                           data=data)
+                           columns=people_columns,
+                           data=people_data)
 
 # Start app
 if __name__ == '__main__':

@@ -4,66 +4,94 @@
   <title>Flights on the Ground</title>
   <style>
     body {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f4f6f8;
-        padding: 40px;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px;
+      margin: 0;
     }
+
     h2 {
-        color: #2c3e50;
+      color: #2c3e50;
+      font-size: 28px;
+      margin-bottom: 20px;
     }
+
     .msg {
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-weight: bold;
     }
+
     .success {
-        background-color: #d4edda;
-        color: #155724;
+      background-color: #d4edda;
+      color: #155724;
     }
+
     .error {
-        background-color: #f8d7da;
-        color: #721c24;
+      background-color: #f8d7da;
+      color: #721c24;
     }
+
     table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 30px;
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
+
     th, td {
-        border: 1px solid #ccc;
-        padding: 12px;
-        text-align: center;
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
     }
+
     th {
-        background-color: #3498db;
-        color: white;
+      background-color: #3498db;
+      color: white;
+      text-transform: capitalize;
     }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
     .btn {
-        background-color: #2980b9;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        margin-top: 20px;
-        border-radius: 6px;
-        cursor: pointer;
+      background-color: #2980b9;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      margin-top: 20px;
+      border-radius: 6px;
+      cursor: pointer;
     }
+
     .btn:hover {
-        background-color: #21618c;
+      background-color: #21618c;
     }
+
     .back-link {
-        display: inline-block;
-        margin-top: 10px;
-        color: #3498db;
-        text-decoration: none;
+      display: inline-block;
+      margin-top: 15px;
+      color: #3498db;
+      text-decoration: none;
+      font-weight: bold;
     }
+
     .back-link:hover {
-        text-decoration: underline;
+      text-decoration: underline;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #7f8c8d;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
-  <h2>Flights on the Ground</h2>
+
+  <h2>Flights Currently on the Ground</h2>
 
   {% if message %}
     <div class="msg {% if success %}success{% else %}error{% endif %}">{{ message }}</div>
@@ -73,17 +101,16 @@
     <button type="submit" class="btn">Refresh Flights</button>
   </form>
 
-  {% if success %}
-    <h2>Flight Data</h2>
-    <table>
-      <thead>
-        <tr>
-          {% for col in flight_columns %}
-            <th>{{ col }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
+  <table>
+    <thead>
+      <tr>
+        {% for col in flight_columns %}
+          <th>{{ col.replace('_', ' ').title() }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% if flight_data %}
         {% for row in flight_data %}
           <tr>
             {% for item in row %}
@@ -91,12 +118,17 @@
             {% endfor %}
           </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>No data available to display.</p>
-  {% endif %}
+      {% else %}
+        <tr>
+          <td colspan="{{ flight_columns|length }}" class="no-data">
+            No flights currently on the ground.
+          </td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
 
   <a href="/" class="back-link">← Back to Home</a>
+
 </body>
 </html>
