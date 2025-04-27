@@ -85,6 +85,7 @@
 </head>
 <body>
 <h1>✈️ Flight Landing</h1>
+
 <form method="POST">
   <label for="flightID">Select Flight:</label>
   <select name="flightID" required>
@@ -94,10 +95,17 @@
   </select>
   <button type="submit">Land Flight</button>
 </form>
+
 {% if message %}
-<p style="color: {{ 'green' if success else 'red' }}">{{ message }}</p>
+<div class="msg {{ 'success' if success else 'error' }}">
+  {{ message }}
+</div>
 {% endif %}
 <br>
+
+<form method="GET">
+  <button type="submit" class="btn">Refresh Flights</button>
+</form>
 
 {% if flight_data %}
 <h2 style="margin-top: 40px;">Current Flights Table</h2>
@@ -118,7 +126,6 @@
 {% else %}
 <p>No flight data available.</p>
 {% endif %}
-
 
 <div style="text-align: center; margin-top: 30px;">
   <a href="{{ url_for('home') }}">
