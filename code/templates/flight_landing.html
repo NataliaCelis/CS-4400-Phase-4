@@ -92,7 +92,7 @@
 <form method="POST">
   <label for="flightID"><strong>Select Flight:</strong></label>
   <select name="flightID" required>
-    <option value="" disabled selected>Select a Flight</option> <!-- This is the greyed-out placeholder -->
+    <option value="" disabled selected>Select a Flight</option>
     {% for flight in flight_ids %}
       <option value="{{ flight }}">{{ flight }}</option>
     {% endfor %}
