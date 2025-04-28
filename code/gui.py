@@ -405,7 +405,7 @@ def offer_flight():
                 if result:
                     error_msg = "Error: " + result
                 elif new_count == prev_count:
-                    error_msg = "No flight was added — check constraints or existing flight ID."
+                    error_msg = "Flight could not be offered — check Route ID, Airplane availability, or existing Flight ID."
                 else:
                     success_msg = f"Flight {flightID} offered!"
 
