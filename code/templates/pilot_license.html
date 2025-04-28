@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Manage Pilot Licenses</title>
+  <title>Grant or Revoke Pilot License</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -75,11 +75,8 @@
 <body>
 <h2>Grant or Revoke Pilot License</h2>
 
-{% if error_msg %}
-<div class="msg error">{{ error_msg }}</div>
-{% endif %}
-{% if success_msg %}
-<div class="msg success">{{ success_msg }}</div>
+{% if message %}
+<div class="msg {{ 'success' if success else 'error' }}">{{ message }}</div>
 {% endif %}
 
 <form method="POST">
