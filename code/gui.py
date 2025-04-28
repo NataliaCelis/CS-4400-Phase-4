@@ -203,23 +203,38 @@ def add_airport():
             if not airportID or not city or not state or not country or not locationID:
                 error_msg = "Please fill out all required fields."
             else:
-                result = run_procedure("add_airport", (
+                # Call stored procedure
+                result, _ = run_procedure("add_airport", (
                     airportID, airport_name, city, state, country, locationID
                 ))
+
+                # Fetch updated airport table after procedure
+                airport_columns, airport_data = fetch_table_data("airport")
+
+                # Check if new airportID actually inserted
                 if result:
                     error_msg = "Error: " + result
+                elif not any(a[0] == airportID for a in airport_data):
+                    error_msg = (
+                        "Insert failed — Airport not added. "
+                        "Check if AirportID or LocationID already exists."
+                    )
                 else:
                     success_msg = f"Airport {airportID} added!"
+
         except Exception as e:
             error_msg = "Unexpected error: " + str(e)
+            airport_columns, airport_data = fetch_table_data("airport")
 
-    airport_columns, airport_data = fetch_table_data("airport")
+    else:
+        airport_columns, airport_data = fetch_table_data("airport")
 
     return render_template("add_airport.html",
                            error_msg=error_msg,
                            success_msg=success_msg,
                            airport_columns=airport_columns,
                            airport_data=airport_data)
+
 
 
 @app.route('/add_person', methods=['GET', 'POST'])
