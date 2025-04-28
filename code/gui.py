@@ -158,6 +158,9 @@ def add_airplane():
             if not airlineID or not tail_num or seat_capacity <= 0 or speed <= 0 or not locationID:
                 error_msg = "Please fill out all required fields properly."
             else:
+                # Fetch old airplane table
+                old_columns, old_data = fetch_table_data("airplane")
+
                 result = run_procedure("add_airplane", (
                     airlineID,
                     tail_num,
@@ -169,16 +172,33 @@ def add_airplane():
                     model if plane_type == "Boeing" else None,
                     neo if plane_type == "Airbus" else None
                 ))
+
+                # Fetch updated airplane table
+                airplane_columns, airplane_data = fetch_table_data("airplane")
+
+                # Check if the new airplane appeared
+                old_keys = set((row[0], row[1]) for row in old_data)  # (airlineID, tail_num)
+                new_keys = set((row[0], row[1]) for row in airplane_data)
+
                 if result:
                     error_msg = "Error: " + result
+                elif (airlineID, tail_num) not in (new_keys - old_keys):
+                    error_msg = (
+                        "Insert failed — Airplane not added. "
+                        "Check if (AirlineID, Tail Number) or LocationID already exist or if fields are invalid."
+                    )
                 else:
-                    success_msg = f"Airplane {tail_num} added!"
+                    success_msg = f"Airplane {tail_num} successfully added!"
+
         except ValueError:
             error_msg = "Seat capacity and speed must be valid numbers."
+            airplane_columns, airplane_data = fetch_table_data("airplane")
         except Exception as e:
             error_msg = "Unexpected error: " + str(e)
+            airplane_columns, airplane_data = fetch_table_data("airplane")
 
-    airplane_columns, airplane_data = fetch_table_data("airplane")
+    else:
+        airplane_columns, airplane_data = fetch_table_data("airplane")
 
     return render_template("add_airplane.html",
                            error_msg=error_msg,
@@ -186,6 +206,8 @@ def add_airplane():
                            airplane_columns=airplane_columns,
                            airplane_data=airplane_data)
 
+
+#add airport
 @app.route('/add_airport', methods=['GET', 'POST'])
 def add_airport():
     error_msg = ""
@@ -203,24 +225,29 @@ def add_airport():
             if not airportID or not city or not state or not country or not locationID:
                 error_msg = "Please fill out all required fields."
             else:
-                # Call stored procedure
-                result, _ = run_procedure("add_airport", (
+                # Before insert, fetch airport table
+                old_airport_columns, old_airport_data = fetch_table_data("airport")
+
+                result = run_procedure("add_airport", (
                     airportID, airport_name, city, state, country, locationID
                 ))
 
-                # Fetch updated airport table after procedure
+                # Fetch updated table
                 airport_columns, airport_data = fetch_table_data("airport")
 
-                # Check if new airportID actually inserted
+                # Check if airportID newly appeared
+                old_ids = set(a[0] for a in old_airport_data)
+                new_ids = set(a[0] for a in airport_data)
+
                 if result:
                     error_msg = "Error: " + result
-                elif not any(a[0] == airportID for a in airport_data):
+                elif airportID not in (new_ids - old_ids):
                     error_msg = (
                         "Insert failed — Airport not added. "
                         "Check if AirportID or LocationID already exists."
                     )
                 else:
-                    success_msg = f"Airport {airportID} added!"
+                    success_msg = f"Airport {airportID} successfully added!"
 
         except Exception as e:
             error_msg = "Unexpected error: " + str(e)
@@ -234,6 +261,7 @@ def add_airport():
                            success_msg=success_msg,
                            airport_columns=airport_columns,
                            airport_data=airport_data)
+
 
 
 
@@ -306,8 +334,8 @@ def add_person():
 
 @app.route('/pilot_license', methods=['GET', 'POST'])
 def pilot_license():
-    error_msg = ""
-    success_msg = ""
+    message = ""
+    success = False
 
     if request.method == "POST":
         try:
@@ -315,23 +343,34 @@ def pilot_license():
             license = request.form.get("license")
 
             if not personID or not license:
-                error_msg = "Please fill out both fields."
+                message = "Please fill out both fields."
             else:
-                result = run_procedure("grant_or_revoke_pilot_license", (personID, license))
-                if result:
-                    error_msg = "Error: " + result
+                # First check if personID exists in pilot
+                cursor = connection.cursor()
+                cursor.execute("SELECT COUNT(*) FROM pilot WHERE personID = %s", (personID,))
+                exists = cursor.fetchone()[0]
+                cursor.close()
+
+                if exists == 0:
+                    message = f"Error: Person ID {personID} is not a valid pilot."
                 else:
-                    success_msg = f"License '{license}' toggled for person {personID}."
+                    result = run_procedure("grant_or_revoke_pilot_license", (personID, license))
+                    if result:
+                        message = "Error: " + result
+                    else:
+                        success = True
+                        message = f"License '{license}' toggled for person {personID}."
         except Exception as e:
-            error_msg = "Unexpected error: " + str(e)
+            message = "Unexpected error: " + str(e)
 
     license_columns, license_data = fetch_table_data("pilot_licenses")
 
     return render_template("pilot_license.html",
-                           error_msg=error_msg,
-                           success_msg=success_msg,
+                           message=message,
+                           success=success,
                            license_columns=license_columns,
                            license_data=license_data)
+
 
 @app.route('/offer_flight', methods=['GET', 'POST'])
 def offer_flight():
@@ -366,7 +405,7 @@ def offer_flight():
                 if result:
                     error_msg = "Error: " + result
                 elif new_count == prev_count:
-                    error_msg = "No flight was added — check constraints or existing flight ID."
+                    error_msg = "Flight could not be offered — check Route ID, Airplane availability, or existing Flight ID."
                 else:
                     success_msg = f"Flight {flightID} offered!"
 
