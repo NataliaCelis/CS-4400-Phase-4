@@ -9,7 +9,7 @@ try:
     connection = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="seemsfair",
+        password="",
         database="flight_tracking"
     )
 except mysql.connector.Error as err:
@@ -749,12 +749,9 @@ def assign_pilot():
             try:
                 cursor = connection.cursor()
 
-                # Grab BEFORE row (optional but for comparison)
-                cursor.execute("SELECT * FROM pilot WHERE personID = %s", (person_id,))
+                # Grab BEFORE state
+                cursor.execute("SELECT commanding_flight FROM pilot WHERE personID = %s", (person_id,))
                 pilot_before = cursor.fetchone()
-
-                cursor.execute("SELECT * FROM person WHERE personID = %s", (person_id,))
-                person_before = cursor.fetchone()
 
                 # Call the stored procedure
                 result = run_procedure("assign_pilot", (flight_id, person_id))
@@ -762,15 +759,24 @@ def assign_pilot():
                 if result:
                     message = "Error: " + result
                 else:
-                    success = True
-                    message = f"Pilot {person_id} successfully assigned to flight {flight_id}."
+                    # Check AFTER state
+                    cursor.execute("SELECT commanding_flight FROM pilot WHERE personID = %s", (person_id,))
+                    pilot_after = cursor.fetchone()
 
-                    # Fetch updated rows
-                    cursor.execute("SELECT * FROM pilot WHERE personID = %s", (person_id,))
-                    updated_pilot = cursor.fetchone()
+                    if not pilot_after:
+                        message = f"Error: Pilot {person_id} could not be assigned (no change detected)."
+                    elif pilot_before == pilot_after:
+                        message = f"Error: Pilot {person_id} was not assigned (constraint violation)."
+                    else:
+                        success = True
+                        message = f"Pilot {person_id} successfully assigned to flight {flight_id}."
 
-                    cursor.execute("SELECT * FROM person WHERE personID = %s", (person_id,))
-                    updated_person = cursor.fetchone()
+                        # Fetch updated full rows
+                        cursor.execute("SELECT * FROM pilot WHERE personID = %s", (person_id,))
+                        updated_pilot = cursor.fetchone()
+
+                        cursor.execute("SELECT * FROM person WHERE personID = %s", (person_id,))
+                        updated_person = cursor.fetchone()
 
                 cursor.close()
             except Exception as e:
@@ -789,6 +795,7 @@ def assign_pilot():
                            pilot_data=pilot_data,
                            person_columns=person_columns,
                            person_data=person_data)
+
 
 #Recycle crew
 @app.route('/recycle_crew', methods=['GET', 'POST'])
