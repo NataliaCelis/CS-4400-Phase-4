@@ -35,15 +35,15 @@
     form {
         margin-bottom: 30px;
     }
-    select {
-        padding: 10px;
-        margin-left: 10px;
-        width: 200px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
+    input[type="text"] {
+      padding: 10px;
+      margin-left: 10px;
+      width: 250px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
     }
-    select option[disabled] {
-        color: #999;
+    form {
+      margin-bottom: 20px;
     }
     button {
         background-color: #2980b9;
@@ -76,27 +76,22 @@
         margin-top: 40px;
         text-align: center;
     }
-    .back-link a {
-        color: #3498db;
-        text-decoration: none;
-        font-size: 16px;
+    .back-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: #3498db;
+      text-decoration: none;
     }
-    .back-link a:hover {
-        text-decoration: underline;
+    .back-link:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-<h1>✈️ Flight Landing</h1>
+<h1>Flight Landing</h1>
 
 <form method="POST">
-  <label for="flightID"><strong>Select Flight:</strong></label>
-  <select name="flightID" required>
-    <option value="" disabled selected>Select a Flight</option>
-    {% for flight in flight_ids %}
-      <option value="{{ flight }}">{{ flight }}</option>
-    {% endfor %}
-  </select>
+  <input type="text" name="flightID" placeholder="FlightID (e.g. dl_42)" required>
   <button type="submit">Land Flight</button>
 </form>
 
@@ -105,15 +100,16 @@
   {{ message }}
 </div>
 {% endif %}
-<br>
 
 <form method="GET">
   <button type="submit" class="btn">Refresh Flights</button>
 </form>
 
+<a href="/" class="back-link">← Back to Home</a>
+
 {% if flight_data %}
-<h2 style="margin-top: 40px;">Current Flights Table</h2>
-<table border="1" cellpadding="8" cellspacing="0" style="margin: 0 auto; text-align: center;">
+<h2>Current Flights Table</h2>
+<table>
   <tr>
     {% for col in flight_columns %}
     <th>{{ col }}</th>
@@ -130,12 +126,6 @@
 {% else %}
 <p>No flight data available.</p>
 {% endif %}
-
-<div style="text-align: center; margin-top: 30px;">
-  <a href="{{ url_for('home') }}">
-    <button style="padding: 8px 16px; font-size: 14px;">⬅ Back to Home</button>
-  </a>
-</div>
 
 </body>
 </html>

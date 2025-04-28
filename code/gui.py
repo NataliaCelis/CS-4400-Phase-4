@@ -9,7 +9,7 @@ try:
     connection = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="",
+        password="seemsfair",
         database="flight_tracking"
     )
 except mysql.connector.Error as err:
@@ -396,16 +396,8 @@ def flight_landing():
     if request.method == "POST":
         flight_id = request.form.get("flightID")
         if not flight_id:
-            message = "Please select a flight."
+            message = "Please enter a Flight ID"
         else:
-            # old code with simpler success/error implementation
-            # result = run_procedure("flight_landing", (flight_id,))
-            # if result:
-                # message = "Error: " + result
-            # else:
-                # message = f"Flight {flight_id} successfully landed!"
-                # success = True
-
             try: # using a cursor so that we can compare before and after values to give useful error messages
                 cursor = connection.cursor()
 
@@ -414,7 +406,7 @@ def flight_landing():
                 before = cursor.fetchone()
 
                 if not before: # if no rows returned
-                    message = "Flight not found."
+                    message = f"Flight '{flight_id}' not found."
                 else:
                     status_before, progress_before = before
 
@@ -468,15 +460,8 @@ def flight_takeoff():
     if request.method == "POST":
         flight_id = request.form.get("flightID")
         if not flight_id:
-            message = "Please select a flight."
+            message = "Please enter a Flight ID"
         else:
-            # old code with simpler success/error implementation
-            #result = run_procedure("flight_takeoff", (flight_id,))
-            #if result:
-                #message = "Error: " + result
-            #else:
-                #message = f"Flight {flight_id} successfully took off!"
-                #success = True
             try:
                 cursor = connection.cursor()
 
@@ -485,7 +470,7 @@ def flight_takeoff():
                 before = cursor.fetchone()
 
                 if not before:
-                    message = "Flight not found."
+                    message = f"Flight '{flight_id}' not found."
                 else:
                     status_before, next_time_before = before # get the time before running so we can compare after
 

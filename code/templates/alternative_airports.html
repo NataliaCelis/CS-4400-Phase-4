@@ -69,19 +69,15 @@
     .btn:hover {
       background-color: #21618c;
     }
-
     .back-link {
       display: inline-block;
-      margin-top: 15px;
+      margin-top: 10px;
       color: #3498db;
       text-decoration: none;
-      font-weight: bold;
     }
-
     .back-link:hover {
       text-decoration: underline;
     }
-
     .no-data {
       text-align: center;
       color: #7f8c8d;
@@ -98,8 +94,10 @@
   {% endif %}
 
   <form method="GET">
-    <button type="submit" class="btn">Refresh Data</button>
+    <button type="submit" class="btn">Refresh Airports</button>
   </form>
+
+  <a href="/" class="back-link">← Back to Home</a>
 
   <table>
     <thead>
@@ -131,8 +129,6 @@
       {% endif %}
     </tbody>
   </table>
-
-  <a href="/" class="back-link">← Back to Home</a>
 
 </body>
 </html>

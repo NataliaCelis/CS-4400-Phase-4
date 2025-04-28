@@ -35,15 +35,15 @@
     form {
       margin-bottom: 30px;
     }
-    select {
-      padding: 10px;
-      margin-left: 10px;
-      width: 200px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+    input[type="text"] {
+    padding: 10px;
+    margin-left: 10px;
+    width: 250px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
     }
-    select option[disabled] {
-      color: #999;
+    form {
+      margin-bottom: 20px;
     }
     button {
       background-color: #2980b9;
@@ -76,28 +76,23 @@
       margin-top: 40px;
       text-align: center;
     }
-    .back-link a {
+    .back-link {
+      display: inline-block;
+      margin-top: 10px;
       color: #3498db;
       text-decoration: none;
-      font-size: 16px;
     }
-    .back-link a:hover {
+    .back-link:hover {
       text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-<h1>🚀 Flight Takeoff</h1>
+<h1>Flight Takeoff</h1>
 
 <form method="POST">
-  <label for="flightID"><strong>Select Flight:</strong></label>
-  <select name="flightID" required>
-    <option value="" disabled selected>Select a Flight</option>
-    {% for flight in flight_ids %}
-      <option value="{{ flight }}">{{ flight }}</option>
-    {% endfor %}
-  </select>
+  <input type="text" name="flightID" placeholder="FlightID (e.g. dl_42)" required>
   <button type="submit">Take Off</button>
 </form>
 
@@ -110,6 +105,8 @@
 <form method="GET">
   <button type="submit" class="btn">Refresh Flights</button>
 </form>
+
+<a href="/" class="back-link">← Back to Home</a>
 
 {% if flight_data %}
 <h2>Current Flights Table</h2>
@@ -130,10 +127,6 @@
 {% else %}
 <p>No flight data available.</p>
 {% endif %}
-
-<div class="back-link">
-  <a href="{{ url_for('home') }}">⬅ Back to Home</a>
-</div>
 
 </body>
 </html>

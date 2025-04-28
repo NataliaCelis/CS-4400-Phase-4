@@ -69,19 +69,15 @@
     .btn:hover {
       background-color: #21618c;
     }
-
     .back-link {
       display: inline-block;
-      margin-top: 15px;
+      margin-top: 10px;
       color: #3498db;
       text-decoration: none;
-      font-weight: bold;
     }
-
     .back-link:hover {
       text-decoration: underline;
     }
-
     .no-data {
       text-align: center;
       color: #7f8c8d;
@@ -91,15 +87,17 @@
 </head>
 <body>
 
-  <h2>People Currently In The Air</h2>
+  <h2>People in the Air</h2>
 
   {% if message %}
     <div class="msg {% if success %}success{% else %}error{% endif %}">{{ message }}</div>
   {% endif %}
 
   <form method="GET">
-    <button type="submit" class="btn">Refresh Button</button>
+    <button type="submit" class="btn">Refresh People</button>
   </form>
+
+  <a href="/" class="back-link">← Back to Home</a>
 
   <table>
     <thead>
@@ -127,8 +125,6 @@
       {% endif %}
     </tbody>
   </table>
-
-  <a href="/" class="back-link">← Back to Home</a>
 
 </body>
 </html>
